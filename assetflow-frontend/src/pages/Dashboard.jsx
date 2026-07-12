@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/client';
 import {
   Package, Users, ArrowLeftRight, Wrench, AlertTriangle,
-  Clock, TrendingUp, Activity, CheckCircle, XCircle
+  Clock, TrendingUp, Activity, CheckCircle, XCircle, Plus
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
