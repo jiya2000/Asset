@@ -65,10 +65,10 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> Employee:
     payload = decode_access_token(token)
-    user_id: int = payload.get("sub")
+    user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token payload")
-    user = db.query(Employee).filter(Employee.id == user_id, Employee.is_active == True).first()
+    user = db.query(Employee).filter(Employee.id == int(user_id), Employee.is_active == True).first()
     if user is None:
         raise HTTPException(status_code=401, detail="User not found or deactivated")
     return user

@@ -70,7 +70,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     if not emp.is_active:
         raise HTTPException(status_code=403, detail="Account deactivated")
 
-    token = create_access_token({"sub": emp.id, "role": emp.role.value})
+    token = create_access_token({"sub": str(emp.id), "role": emp.role.value})
     return TokenResponse(access_token=token, user=EmployeeResponse.model_validate(emp))
 
 

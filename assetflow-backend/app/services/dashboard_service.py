@@ -77,7 +77,10 @@ class DashboardService:
         # 1. Overdue returns
         overdue_allocs = AllocationRepository.get_overdue(db)
         for alloc in overdue_allocs:
-            days_overdue = (now - alloc.expected_return).days
+            expected = alloc.expected_return
+            if expected.tzinfo is None:
+                expected = expected.replace(tzinfo=timezone.utc)
+            days_overdue = (now - expected).days
             insights.append(SmartInsight(
                 insight_type="overdue_return",
                 severity="critical" if days_overdue > 7 else "warning",
