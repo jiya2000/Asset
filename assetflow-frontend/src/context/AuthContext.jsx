@@ -1,17 +1,32 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import api from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Restore user from localStorage on initial load
+    const saved = localStorage.getItem('assetflow_user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [token, setToken] = useState(localStorage.getItem('assetflow_token'));
   const [loading, setLoading] = useState(true);
+  const justLoggedIn = useRef(false);
 
   useEffect(() => {
+    // Skip /auth/me if we just logged in (user already set from login response)
+    if (justLoggedIn.current) {
+      justLoggedIn.current = false;
+      setLoading(false);
+      return;
+    }
+
     if (token) {
       api.get('/auth/me')
-        .then(res => setUser(res.data))
+        .then(res => {
+          setUser(res.data);
+          localStorage.setItem('assetflow_user', JSON.stringify(res.data));
+        })
         .catch(() => {
           localStorage.removeItem('assetflow_token');
           localStorage.removeItem('assetflow_user');
@@ -29,8 +44,9 @@ export function AuthProvider({ children }) {
     const { access_token, user: userData } = res.data;
     localStorage.setItem('assetflow_token', access_token);
     localStorage.setItem('assetflow_user', JSON.stringify(userData));
-    setToken(access_token);
+    justLoggedIn.current = true;
     setUser(userData);
+    setToken(access_token);
     return userData;
   };
 
@@ -41,8 +57,10 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const isAdmin = user?.role === 'ADMIN';
-  const isManager = user?.role === 'MANAGER';
+  // Backend returns lowercase roles: "admin", "manager", "employee"
+  const role = user?.role?.toLowerCase();
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
   const canApprove = isAdmin || isManager;
 
   return (
