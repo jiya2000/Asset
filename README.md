@@ -8,21 +8,17 @@ AssetFlow is a comprehensive Asset Management System designed to track, manage, 
 
 ## 📸 Screenshots
 
-### Dashboard (Top Section)
-*Overview of all active assets, maintenance tasks, and top-level KPIs.*
-![Dashboard Top](./docs/assets/img1.png)
-
-### Dashboard (Analytics & Insights)
-*Visual charts showing assets by status, category, recent activities, and smart insights.*
-![Dashboard Bottom](./docs/assets/img2.png)
+### Dashboard
+*Overview of all active assets, maintenance tasks, top-level KPIs, analytics and insights.*
+![Dashboard](./docs/assets/dashboard_real.png)
 
 ### Asset Registry
 *The Asset Tracking page allows administrators to add, view, update, and remove assets efficiently with a powerful data grid.*
-![Asset Registry](./docs/assets/img3.png)
+![Asset Registry](./docs/assets/assets_real.png)
 
-### Allocations & Transfers
-*Track active, pending, and returned asset allocations across the organization.*
-![Allocations & Transfers](./docs/assets/img4.png)
+### Maintenance
+*Track maintenance tasks for all assets.*
+![Maintenance](./docs/assets/maintenance_real.png)
 
 ---
 
