@@ -1,27 +1,21 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    // Restore user from localStorage on initial load
-    const saved = localStorage.getItem('assetflow_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('assetflow_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
   const [token, setToken] = useState(localStorage.getItem('assetflow_token'));
-  const [loading, setLoading] = useState(true);
-  const justLoggedIn = useRef(false);
+  const [loading, setLoading] = useState(!user); // If user is restored, don't show loading
 
+  // Only verify token on cold start (page reload with no cached user)
   useEffect(() => {
-    // Skip /auth/me if we just logged in (user already set from login response)
-    if (justLoggedIn.current) {
-      justLoggedIn.current = false;
-      setLoading(false);
-      return;
-    }
-
-    if (token) {
+    if (token && !user) {
       api.get('/auth/me')
         .then(res => {
           setUser(res.data);
@@ -37,16 +31,16 @@ export function AuthProvider({ children }) {
     } else {
       setLoading(false);
     }
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run ONCE on mount only
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     const { access_token, user: userData } = res.data;
     localStorage.setItem('assetflow_token', access_token);
     localStorage.setItem('assetflow_user', JSON.stringify(userData));
-    justLoggedIn.current = true;
-    setUser(userData);
     setToken(access_token);
+    setUser(userData);
     return userData;
   };
 
@@ -57,7 +51,6 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  // Backend returns lowercase roles: "admin", "manager", "employee"
   const role = user?.role?.toLowerCase();
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
