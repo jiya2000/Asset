@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Package, Plus, Search, X, Edit3, Trash2 } from 'lucide-react';
+import { Package, Plus, Search, X, Edit3, Trash2, QrCode, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STATUS_MAP = {
@@ -26,6 +27,8 @@ export default function Assets() {
   const [categories, setCategories] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrAsset, setQrAsset] = useState(null);
   const [editAsset, setEditAsset] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +38,8 @@ export default function Assets() {
     warranty_expiry: '', location: '', department_id: '',
   };
   const [form, setForm] = useState(emptyForm);
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchAssets = useCallback(async () => {
     const params = { page, page_size: 15 };
@@ -48,6 +53,14 @@ export default function Assets() {
   }, [page, search, statusFilter, categoryFilter]);
 
   useEffect(() => { fetchAssets(); }, [fetchAssets]);
+
+  useEffect(() => {
+    if (searchParams.get('new')) {
+      setShowModal(true);
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     Promise.all([api.get('/assets/categories'), api.get('/auth/departments')])
@@ -112,6 +125,11 @@ export default function Assets() {
     fetchAssets();
   };
 
+  const handleShowQr = (asset) => {
+    setQrAsset(asset);
+    setShowQrModal(true);
+  };
+
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '—';
 
   return (
@@ -171,8 +189,9 @@ export default function Assets() {
                 {canApprove && (
                   <td>
                     <div className="flex gap-2">
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleEdit(a)}><Edit3 size={14} /></button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(a)}><Trash2 size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleShowQr(a)} title="Show QR Code"><QrCode size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleEdit(a)} title="Edit"><Edit3 size={14} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(a)} title="Delete"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 )}
@@ -283,6 +302,33 @@ export default function Assets() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQrModal && qrAsset && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowQrModal(false)}>
+          <div className="modal animate-slide" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2>Asset QR Code</h2>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowQrModal(false)}><X size={18} /></button>
+            </div>
+            <div className="p-6 bg-white rounded-lg inline-block border border-gray-200">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrAsset.asset_tag)}`} 
+                alt="QR Code" 
+                style={{ width: 200, height: 200, margin: '0 auto', display: 'block' }} 
+              />
+              <div className="mt-4 font-mono font-bold text-lg text-black">{qrAsset.asset_tag}</div>
+              <div className="text-sm text-gray-500 mt-1">{qrAsset.name}</div>
+            </div>
+            <div className="modal-actions mt-6">
+              <button type="button" className="btn btn-ghost" onClick={() => setShowQrModal(false)}>Close</button>
+              <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+                <Printer size={16} style={{ marginRight: 8 }} /> Print Tag
+              </button>
+            </div>
           </div>
         </div>
       )}

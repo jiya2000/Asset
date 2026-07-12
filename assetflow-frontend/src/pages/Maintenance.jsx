@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Wrench, Plus, X, CheckCircle, Play, CheckCheck, AlertTriangle } from 'lucide-react';
@@ -33,6 +34,8 @@ export default function Maintenance() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ asset_id: '', title: '', description: '', priority: 'MEDIUM' });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const fetchRequests = async () => {
     const params = {};
     if (statusFilter) params.status = statusFilter;
@@ -41,6 +44,16 @@ export default function Maintenance() {
   };
 
   useEffect(() => { fetchRequests(); }, [statusFilter]);
+
+  useEffect(() => {
+    if (searchParams.get('new')) {
+      fetchAssets();
+      setShowModal(true);
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams]);
 
   const fetchAssets = async () => {
     const res = await api.get('/assets/', { params: { page_size: 100 } });
@@ -104,6 +117,46 @@ export default function Maintenance() {
     return null;
   };
 
+  const renderStepper = (status) => {
+    if (status === 'CANCELLED') return <div className="mt-3 text-sm font-bold" style={{ color: 'var(--danger)' }}>CANCELLED</div>;
+    const STEPS = ['PENDING', 'APPROVED', 'IN_PROGRESS', 'RESOLVED'];
+    const currentIdx = STEPS.indexOf(status);
+    
+    return (
+      <div className="flex items-center w-full mt-4 mb-4" style={{ maxWidth: '400px' }}>
+        {STEPS.map((s, idx) => {
+          const isCompleted = idx <= currentIdx;
+          const isActive = idx === currentIdx;
+          return (
+            <div key={s} className="flex items-center" style={{ flex: idx === STEPS.length - 1 ? 0 : 1 }}>
+              <div className="flex flex-col items-center relative">
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  backgroundColor: isCompleted ? 'var(--primary)' : 'transparent',
+                  border: isCompleted ? '2px solid var(--primary)' : '2px solid var(--border)',
+                  color: isCompleted ? '#fff' : 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 'bold', zIndex: 2
+                }}>
+                  {isCompleted ? '✓' : idx + 1}
+                </div>
+                <span style={{ position: 'absolute', top: 28, fontSize: '0.65rem', whiteSpace: 'nowrap', color: isActive ? 'var(--primary)' : 'var(--text-muted)', fontWeight: isActive ? 700 : 400 }}>
+                  {s.replace('_', ' ')}
+                </span>
+              </div>
+              {idx < STEPS.length - 1 && (
+                <div style={{
+                  flex: 1, height: 2, margin: '0 4px',
+                  backgroundColor: idx < currentIdx ? 'var(--primary)' : 'var(--border)'
+                }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="page-header page-header-actions">
@@ -139,10 +192,10 @@ export default function Maintenance() {
               <div style={{ flex: 1 }}>
                 <div className="flex items-center gap-2">
                   <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{req.title}</span>
-                  <span className={`badge ${STATUS_MAP[req.status]}`}>{req.status.replace('_', ' ')}</span>
                   <span className={`badge ${PRIORITY_MAP[req.priority]}`}>{req.priority}</span>
                 </div>
-                <div className="flex items-center gap-3 mt-2 text-sm text-muted">
+                {renderStepper(req.status)}
+                <div className="flex items-center gap-3 mt-4 text-sm text-muted">
                   <span>Asset #{req.asset_id}</span>
                   <span>Requested: {new Date(req.created_at).toLocaleDateString('en-IN')}</span>
                   {req.description && <span>{req.description}</span>}

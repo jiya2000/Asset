@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -41,6 +42,8 @@ export default function Allocations() {
     asset_id: '', from_employee_id: '', to_employee_id: '', reason: ''
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const fetchAll = useCallback(async () => {
     try {
       const [allocRes, empRes] = await Promise.all([
@@ -63,6 +66,16 @@ export default function Allocations() {
   }, [canApprove]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    if (searchParams.get('new')) {
+      fetchAvailableAssets();
+      setShowAllocModal(true);
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, setSearchParams]);
 
   const fetchAvailableAssets = async () => {
     const res = await api.get('/assets/', { params: { status: 'AVAILABLE', page_size: 100 } });

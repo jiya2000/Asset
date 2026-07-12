@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import {
   Package, Users, ArrowLeftRight, Wrench, AlertTriangle,
@@ -51,9 +52,16 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Real-time overview of your asset ecosystem</p>
+      <div className="page-header page-header-actions">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Real-time overview of your asset ecosystem</p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/assets?new=1" className="btn btn-primary"><Plus size={16} /> Register Asset</Link>
+          <Link to="/allocations?new=1" className="btn btn-ghost"><ArrowLeftRight size={16} /> Book Resource</Link>
+          <Link to="/maintenance?new=1" className="btn btn-ghost"><Wrench size={16} /> Raise Request</Link>
+        </div>
       </div>
 
       {/* KPI Grid */}
